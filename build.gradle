@@ -1,0 +1,87 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.jdm.dashboard'
+version = '1.0.0'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // SQLite JDBC driver
+    implementation 'org.xerial:sqlite-jdbc:3.40.0.0'
+    
+    // JFreeChart for data visualization
+    implementation 'org.jfree:jfreechart:1.5.3'
+    
+    // Apache Commons CSV for CSV parsing
+    implementation 'org.apache.commons:commons-csv:1.9.0'
+    
+    // Apache Commons IO for file operations
+    implementation 'commons-io:commons-io:2.11.0'
+    
+    // JUnit for testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+}
+
+application {
+    mainClassName = 'com.jdm.dashboard.Main'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.jdm.dashboard.Main'
+    }
+    
+    // Include dependencies in the JAR
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    // Avoid duplicate entries
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Configure processResources task
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+// Ensure resources are included in the build
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src/main/resources', 'resources']
+        }
+    }
+}
+
+// Task to copy schema and other resources
+task copyResources(type: Copy) {
+    from 'src/main/resources'
+    into 'build/resources/main'
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+// Task to copy CSV data files
+task copyData(type: Copy) {
+    from 'resources/data'
+    into 'build/resources/main/data'
+    include '*.csv'
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+// Make sure resources are copied before running
+processResources.dependsOn copyResources
+processResources.dependsOn copyData
+
+test {
+    useJUnitPlatform()
+}
